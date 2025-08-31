@@ -1,26 +1,64 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+export const COLORS = {
+    light: {
+        background: 'hsl(0 0% 100%)',
+        foreground: 'hsl(0 0% 10%)',
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+        card: 'hsl(0 0% 100%)',
+        cardForeground: 'hsl(0 0% 10%)',
 
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+        popover: 'hsl(0 0% 100%)',
+        popoverForeground: 'hsl(0 0% 10%)',
+
+        primary: 'hsl(0 0% 18%)',
+        primaryForeground: 'hsl(0 0% 98%)',
+
+        secondary: 'hsl(0 0% 94%)',
+        secondaryForeground: 'hsl(0 0% 15%)',
+
+        muted: 'hsl(0 0% 94%)',
+        mutedForeground: 'hsl(0 0% 45%)',
+
+        accent: 'hsl(0 0% 90%)',
+        accentForeground: 'hsl(0 0% 15%)',
+
+        destructive: 'hsl(0 72% 51%)',
+        destructiveForeground: 'hsl(0 0% 98%)',
+
+        border: 'hsl(0 0% 90%)',
+        input: 'hsl(0 0% 96%)',
+        ring: 'hsl(0 0% 18%)',
+
+        radius: '0.5rem',
+    },
+    dark: {
+        background: 'hsl(0 0% 6%)',
+        foreground: 'hsl(0 0% 96%)',
+
+        card: 'hsl(0 0% 8%)',
+        cardForeground: 'hsl(0 0% 96%)',
+
+        popover: 'hsl(0 0% 8%)',
+        popoverForeground: 'hsl(0 0% 96%)',
+
+        primary: 'hsl(0 0% 88%)',
+        primaryForeground: 'hsl(0 0% 10%)',
+
+        secondary: 'hsl(0 0% 18%)',
+        secondaryForeground: 'hsl(0 0% 90%)',
+
+        muted: 'hsl(0 0% 18%)',
+        mutedForeground: 'hsl(0 0% 60%)',
+
+        accent: 'hsl(0 0% 24%)',
+        accentForeground: 'hsl(0 0% 95%)',
+
+        destructive: 'hsl(0 62% 50%)',
+        destructiveForeground: 'hsl(0 0% 100%)',
+
+        border: 'hsl(0 0% 18%)',
+        input: 'hsl(0 0% 18%)',
+        ring: 'hsl(0 0% 88%)',
+
+        radius: '0.5rem',
+    },
 };

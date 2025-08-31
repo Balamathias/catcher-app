@@ -1,45 +1,86 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from 'expo-router';
+import { View, Pressable, Text, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemedColors } from '@/hooks/useThemedColors';
+import '@/globals.css';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+	const insets = useSafeAreaInsets();
+	const { colors, theme } = useThemedColors();
+	return (
+		<View
+			style={{ paddingBottom: insets.bottom ? insets.bottom - 4 : 8 }}
+			className={`${theme} flex-row items-center justify-between px-6 pt-3 bg-background border-none shadow-none`}
+		>
+			{state.routes.map((route: any, index: number) => {
+				const { options } = descriptors[route.key];
+				const label =
+					options.tabBarLabel !== undefined
+						? options.tabBarLabel
+						: options.title !== undefined
+						? options.title
+						: route.name;
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+				const isFocused = state.index === index;
 
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
+				const onPress = () => {
+					const event = navigation.emit({
+						type: 'tabPress',
+						target: route.key,
+						canPreventDefault: true,
+					});
+					if (!isFocused && !event.defaultPrevented) {
+						navigation.navigate(route.name);
+					}
+				};
+
+				if (route.name === 'create') {
+					return (
+						<View key={route.key} className="flex-1 items-center" style={{ transform: [{ translateY: Platform.OS === 'ios' ? -18 : -14 }] }}>
+							<Pressable
+								accessibilityRole="button"
+								onPress={onPress}
+								className={`w-16 h-16 rounded-full justify-center items-center shadow-lg bg-primary border border-border/40 ${isFocused ? 'scale-105' : 'scale-100'}`}
+								style={{ shadowColor: colors.primary }}
+							>
+								<Ionicons name="add" size={34} color={colors.primaryForeground} />
+							</Pressable>
+						</View>
+					);
+				}
+
+				const iconName = route.name === 'home' ? (isFocused ? 'home' : 'home-outline') : route.name === 'search' ? (isFocused ? 'search' : 'search-outline') : 'ellipse';
+
+				return (
+					<Pressable
+						key={route.key}
+						onPress={onPress}
+						accessibilityRole="button"
+						accessibilityLabel={label}
+						className="flex-1 items-center"
+					>
+						<Ionicons name={iconName as any} size={24} color={isFocused ? colors.primary : colors.mutedForeground} />
+						<Text className={`text-[11px] mt-1 ${isFocused ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label === 'home' ? 'Home' : label === 'search' ? 'Search' : label}</Text>
+					</Pressable>
+				);
+			})}
+		</View>
+	);
+};
+
+export default function TabsLayout() {
+	const { theme } = useThemedColors();
+	return (
+		<Tabs
+			screenOptions={{ headerShown: false }}
+			tabBar={(props) => <CustomTabBar {...props} />}
+		>
+			<Tabs.Screen name="home" options={{ title: 'home' }} />
+			<Tabs.Screen name="create" options={{ title: 'create' }} />
+			<Tabs.Screen name="search" options={{ title: 'search' }} />
+		</Tabs>
+	);
 }
+
