@@ -8,7 +8,7 @@ const HomeScreen = () => {
   return (
     <SafeAreaView className={`flex-1 ${theme} bg-background`}>
       <View className="flex-1 px-6 pt-8">
-        <Text className="text-2xl font-semibold text-foreground mb-2">Dashboard</Text>
+        <Text className="text-4xl font-semibold text-foreground mb-2">Dashboard</Text>
         <Text className="text-sm text-muted-foreground mb-6">Quick glance at your registered items & status.</Text>
         <View className="rounded-xl border border-border/60 bg-card p-5 mb-4">
           <Text className="text-sm text-muted-foreground mb-1">Registered Items</Text>

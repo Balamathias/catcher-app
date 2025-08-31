@@ -55,3 +55,5 @@ YOU MUST MAKE SURE THAT THE STYLING IS CONSISTENT WITH THESE STANDARDS, styling 
 
 All New screens must be wrapped with <SafeAreaView> from react-native-safe-area-context for consistent compatibility.
 If you want to use gradient, components now support the `style` prop for background gradients.
+
+UI should not be cluttered at all but there should be room for e.g enough whitespacing, etc.

@@ -163,7 +163,7 @@ const Register = () => {
             >
             {/* Logo Section */}
             <Animated.View style={[logoStyle]} className="items-center mb-8">
-              <View className="w-20 h-20 rounded-full bg-input justify-center items-center mb-6 shadow-xl border border-border/60">
+              <View className="w-20 h-20 rounded-full  justify-center items-center mb-6 shadow-xl border border-border/60">
                 <Ionicons name="person-add-outline" color={colors.mutedForeground} size={40} />
               </View>
               <Text className="text-4xl font-bold text-foreground mb-2 tracking-tight">
@@ -183,7 +183,7 @@ const Register = () => {
                 </Text>
                 <Animated.View 
                   style={[inputAnimatedStyle(!!errors.displayName)]}
-                  className={`bg-input rounded-xl flex-row items-center px-4 py-2.5 border ${
+                  className={` rounded-xl flex-row items-center px-4 py-2.5 border ${
                     errors.displayName ? 'border-destructive/60' : 'border-border'
                   }`}
                 >
@@ -212,7 +212,7 @@ const Register = () => {
                 </Text>
                 <Animated.View 
                   style={[inputAnimatedStyle(!!errors.email)]}
-                  className={`bg-input rounded-xl flex-row items-center px-4 py-2.5 border ${
+                  className={` rounded-xl flex-row items-center px-4 py-2.5 border ${
                     errors.email ? 'border-destructive/60' : 'border-border'
                   }`}
                 >
@@ -242,7 +242,7 @@ const Register = () => {
                 </Text>
                 <Animated.View 
                   style={[inputAnimatedStyle(!!errors.password)]}
-                  className={`bg-input rounded-xl flex-row items-center px-4 py-2.5 border ${
+                  className={` rounded-xl flex-row items-center px-4 py-2.5 border ${
                     errors.password ? 'border-destructive/60' : 'border-border'
                   }`}
                 >
@@ -280,7 +280,7 @@ const Register = () => {
                 </Text>
                 <Animated.View 
                   style={[inputAnimatedStyle(!!errors.confirmPassword)]}
-                  className={`bg-input rounded-xl flex-row items-center px-4 py-2.5 border ${
+                  className={` rounded-xl flex-row items-center px-4 py-2.5 border ${
                     errors.confirmPassword ? 'border-destructive/60' : 'border-border'
                   }`}
                 >
