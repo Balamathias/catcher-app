@@ -5,14 +5,17 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedColors } from '@/hooks/useThemedColors';
 
-const SectionTitle: React.FC<{ icon: keyof typeof Ionicons.glyphMap; title: string; }>=({icon,title})=> (
-  <View className="flex-row items-center mb-4">
-    <View className="w-9 h-9 rounded-full bg-primary/10 items-center justify-center mr-3">
-      <Ionicons name={icon} size={20} className="text-primary" color="#6366F1" />
+const SectionTitle: React.FC<{ icon: keyof typeof Ionicons.glyphMap; title: string; }>=({icon,title})=> {
+  const { colors } = useThemedColors();
+  return (
+    <View className="flex-row items-center mb-4">
+        <View className="w-9 h-9 rounded-full bg-primary/10 items-center justify-center mr-3">
+            <Ionicons name={icon} size={16} className="text-primary" color={colors.mutedForeground} />
+        </View>
+        <Text className="text-xl font-semibold tracking-tight text-foreground">{title}</Text>
     </View>
-    <Text className="text-xl font-semibold tracking-tight text-foreground">{title}</Text>
-  </View>
-);
+    );
+}
 
 const Card: React.FC<{children: React.ReactNode; className?: string;}> = ({children,className=''}) => (
   <View className={`rounded-xl border border-border bg-card p-4 mb-4 ${className}`}>{children}</View>
@@ -117,7 +120,7 @@ const InfoScreen: React.FC = () => {
             <Bullet>Dedicated account manager</Bullet>
             <Bullet>Priority support</Bullet>
           </View>
-          <Pressable onPress={()=>router.replace('/auth/register?plan=corporate')} className="w-full rounded-lg border border-primary py-3 items-center">
+          <Pressable onPress={()=>router.replace('/auth/register?plan=corporate')} className="w-full rounded-lg border border-muted py-3 items-center">
             <Text className="text-sm font-semibold text-primary">Contact Us</Text>
           </Pressable>
         </Card>
