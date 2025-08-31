@@ -187,8 +187,11 @@ const WelcomeScreen: React.FC = () => {
             <Dot key={i} i={i} width={winWidth} scrollX={scrollX} />
           ))}
         </View>
+        <Pressable onPress={()=>router.push('/info')} className="mb-6 self-center" accessibilityRole="button">
+          <Text className="text-xs font-medium text-primary">Learn more about how Catcher works</Text>
+        </Pressable>
 
-        <View className="flex-row items-center justify-between">
+  <View className="flex-row items-center justify-between">
           {/* Back */}
             <Pressable
               disabled={activeIndex === 0}
@@ -208,7 +211,7 @@ const WelcomeScreen: React.FC = () => {
               {activeIndex === slides.length - 1 ? 'Get Started' : 'Next'}
             </Text>
           </Pressable>
-        </View>
+  </View>
       </View>
     </SafeAreaView>
   );

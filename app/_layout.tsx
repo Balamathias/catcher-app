@@ -9,6 +9,7 @@ export default function RootLayout() {
     <Stack>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="info" options={{ headerShown: false }} />
       <Stack.Screen name="auth/login" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="auth/register" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
