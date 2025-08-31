@@ -18,6 +18,7 @@ interface Slide {
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
+  cta?: string; // optional inline CTA label
 }
 
 const slides: Slide[] = [
@@ -28,9 +29,16 @@ const slides: Slide[] = [
     icon: 'shield-checkmark-outline'
   },
   {
+    key: 'search',
+    title: 'Search The Global Registry',
+    subtitle: 'Instantly look up a serial to see if an item is Safe, Stolen, or Unknown. Open, fast, transparent.',
+    icon: 'scan-outline',
+    cta: 'Search Registry'
+  },
+  {
     key: 'verify',
     title: 'Verify Before You Buy',
-    subtitle: 'Enter any serial and instantly see a clear status badge: Safe, Stolen or Unknown—reduce risk & avoid bad deals.',
+    subtitle: 'Run a quick check while meeting a seller. Confidence in seconds helps you avoid bad deals.',
     icon: 'search-outline'
   },
   {
@@ -43,7 +51,7 @@ const slides: Slide[] = [
 
 const DOT_SIZE = 8;
 
-const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX: Animated.SharedValue<number>; colors: any; }> = ({ slide, index, width, scrollX, colors }) => {
+const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX: Animated.SharedValue<number>; colors: any; onSearchPress?: () => void; }> = ({ slide, index, width, scrollX, colors, onSearchPress }) => {
   const circleStyle = useAnimatedStyle(() => {
     const input = [(index - 1) * width, index * width, (index + 1) * width];
     return {
@@ -84,9 +92,18 @@ const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX:
       <Animated.Text style={titleStyle} className="text-3xl font-semibold text-center text-foreground tracking-tight leading-snug mb-4">
         {slide.title}
       </Animated.Text>
-      <Animated.Text style={subtitleStyle} className="text-base text-center text-muted-foreground leading-6 px-2">
+      <Animated.Text style={subtitleStyle} className="text-base text-center text-muted-foreground leading-6 px-2 mb-4">
         {slide.subtitle}
       </Animated.Text>
+      {slide.cta && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onSearchPress}
+          className="mt-1 px-5 py-3 rounded-xl bg-primary/90 active:bg-primary w-56 items-center shadow-md"
+        >
+          <Text className="text-sm font-semibold tracking-wide text-primary-foreground">{slide.cta}</Text>
+        </Pressable>
+      )}
     </View>
   );
 };
@@ -124,6 +141,10 @@ const WelcomeScreen: React.FC = () => {
 
   const handleSkip = () => router.replace('/auth/login');
   const handleGetStarted = () => router.replace('/auth/login');
+  // Inline search CTA: could pass redirect param for later handling in login
+  const handleSearchCTA = () => {
+    router.replace('/auth/login?redirect=/(tabs)/search');
+  };
 
   const goTo = (index: number) => {
     scrollRef.current?.scrollTo({ x: index * winWidth, animated: true });
@@ -148,7 +169,15 @@ const WelcomeScreen: React.FC = () => {
         contentContainerStyle={{ alignItems: 'center' }}
       >
         {slides.map((s, i) => (
-          <SlideItem key={s.key} slide={s} index={i} width={winWidth} scrollX={scrollX} colors={colors} />
+          <SlideItem
+            key={s.key}
+            slide={s}
+            index={i}
+            width={winWidth}
+            scrollX={scrollX}
+            colors={colors}
+            onSearchPress={s.key === 'search' ? handleSearchCTA : undefined}
+          />
         ))}
       </Animated.ScrollView>
 
