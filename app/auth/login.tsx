@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Animated, { 
   useSharedValue, 
@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { useThemedColors } from '@/hooks/useThemedColors'
 import { router } from 'expo-router'
+import { useOAuth, useSignIn } from '@/services/auth-hooks'
 
 interface LoginFormData {
   email: string
@@ -29,10 +30,12 @@ const Login = () => {
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Partial<LoginFormData>>({})
+  const [authError, setAuthError] = useState<string | null>(null)
 
   const { theme, colors } = useThemedColors()
+  const { mutateAsync: signIn, isPending, error: signInError } = useSignIn()
+  const { mutateAsync: performOAuthSignIn, isPending: isOAuthPending, error: oauthError } = useOAuth()
 
   const fadeIn = useSharedValue(0)
   const slideUp = useSharedValue(50)
@@ -65,6 +68,9 @@ const Login = () => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+    if (authError) {
+      setAuthError(null)
     }
   }
 
@@ -104,20 +110,31 @@ const Login = () => {
       return
     }
 
-    setIsLoading(true)
-    spinner.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false)
-    
     try {
       const payload = { ...formData, email: formData.email.trim().toLowerCase() }
-      console.log('Login payload prepared:', payload)
-      await new Promise(resolve => setTimeout(resolve, 1400))
-      console.log('Login successful!')
+      setAuthError(null)
+      await signIn(payload)
       router.push('/(tabs)/home')
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to sign in right now. Please try again.'
+      setAuthError(message)
+      triggerShake()
       console.error('Login failed:', error)
     } finally {
-      setIsLoading(false)
-      spinner.value = 0
+      // spinner will stop via effect
+    }
+  }
+
+  const handleOAuthLogin = async () => {
+    try {
+      setAuthError(null)
+      await performOAuthSignIn()
+      router.push('/(tabs)/home')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to continue with Google right now. Please try again.'
+      setAuthError(message)
+      triggerShake()
+      console.error('OAuth login failed:', error)
     }
   }
 
@@ -132,6 +149,28 @@ const Login = () => {
   const spinnerStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spinner.value}deg` }]
   }))
+
+  useEffect(() => {
+    if (isPending || isOAuthPending) {
+      spinner.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false)
+    } else {
+      spinner.value = 0
+    }
+  }, [isPending, isOAuthPending])
+
+  useEffect(() => {
+    if (signInError) {
+      const message = signInError instanceof Error ? signInError.message : 'Unable to sign in right now. Please try again.'
+      setAuthError(message)
+    }
+  }, [signInError])
+
+  useEffect(() => {
+    if (oauthError) {
+      const message = oauthError instanceof Error ? oauthError.message : 'Unable to continue with Google right now. Please try again.'
+      setAuthError(message)
+    }
+  }, [oauthError])
 
   return (
     <SafeAreaView className={`flex-1 ${theme} bg-background`}>
@@ -191,7 +230,7 @@ const Login = () => {
               </View>
 
               {/* Password Input */}
-              <View className="mb-8">
+              <View className="mb-3">
                 <Text className="text-sm font-semibold text-foreground mb-2">
                   Password
                 </Text>
@@ -228,26 +267,32 @@ const Login = () => {
                 )}
               </View>
 
+              {authError && (
+                <View className="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+                  <Text className="text-xs text-destructive font-medium">{authError}</Text>
+                </View>
+              )}
+
               {/* Login Button */}
               <TouchableOpacity
                 onPress={handleLogin}
-                disabled={isLoading}
+                disabled={isPending || isOAuthPending}
                 className={`bg-primary rounded-xl h-14 justify-center items-center flex-row shadow-lg ${
-                  isLoading ? 'opacity-70' : 'opacity-100'
+                  (isPending || isOAuthPending) ? 'opacity-70' : 'opacity-100'
                 }`}
                 accessibilityRole="button"
                 accessibilityLabel="Sign in to your account"
               >
-                {isLoading && (
+                {(isPending || isOAuthPending) && (
                   <Animated.View className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full mr-3" style={spinnerStyle} />
                 )}
                 <Text className="text-base font-semibold text-primary-foreground">
-                  {isLoading ? 'Signing In...' : 'Sign In'}
+                  {isPending || isOAuthPending ? 'Signing In...' : 'Sign In'}
                 </Text>
               </TouchableOpacity>
 
               {/* OR Divider */}
-              <View className="flex-row items-center my-8" accessibilityElementsHidden={isLoading} importantForAccessibility="no-hide-descendants">
+              <View className="flex-row items-center my-8" accessibilityElementsHidden={isPending || isOAuthPending} importantForAccessibility="no-hide-descendants">
                 <View className="flex-1 h-px bg-border" />
                 <Text className="px-4 text-sm text-muted-foreground">or continue with</Text>
                 <View className="flex-1 h-px bg-border" />
@@ -257,16 +302,22 @@ const Login = () => {
         <View className="flex-row justify-center gap-x-4 mb-6">
                 {/* Google */}
                 <TouchableOpacity
-                  onPress={() => console.log('Google login')}
-                  className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
-          accessibilityLabel="Continue with Google"
+                  onPress={handleOAuthLogin}
+                  disabled={isOAuthPending}
+                  className={`w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm ${isOAuthPending ? 'opacity-60' : ''}`}
+                  accessibilityLabel="Continue with Google"
                 >
-                  <Ionicons name="logo-google" size={24} color="#4285F4" />
+                  {isOAuthPending ? (
+                    <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#ffffff' : '#222222'} />
+                  ) : (
+                    <Ionicons name="logo-google" size={24} color="#4285F4" />
+                  )}
                 </TouchableOpacity>
 
                 {/* GitHub */}
                 <TouchableOpacity
-                  onPress={() => console.log('GitHub login')}
+                  onPress={() => console.log('GitHub login coming soon')}
+                  disabled={isOAuthPending}
                   className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
                   accessibilityLabel="Continue with GitHub"
                 >
@@ -275,7 +326,8 @@ const Login = () => {
 
                 {/* Twitter/X */}
                 <TouchableOpacity
-                  onPress={() => console.log('Twitter login')}
+                  onPress={() => console.log('Twitter login coming soon')}
+                  disabled={isOAuthPending}
                   className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
                   accessibilityLabel="Continue with Twitter"
                 >

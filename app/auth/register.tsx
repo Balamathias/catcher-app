@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Animated, { 
   useSharedValue, 
@@ -16,6 +16,7 @@ import { useColorScheme } from '@/hooks/useColorScheme'
 import { useThemedColors } from '@/hooks/useThemedColors'
 import { StatusBar } from 'expo-status-bar'
 import { router } from 'expo-router'
+import { useOAuth, useSignUp } from '@/services/auth-hooks'
 
 interface RegisterFormData {
   displayName: string
@@ -35,10 +36,13 @@ const Register = () => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Partial<RegisterFormData>>({})
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const { theme, colors } = useThemedColors()
+  const { mutateAsync: signUp, isPending, error: signUpError } = useSignUp()
+  const { mutateAsync: performOAuth, isPending: isOAuthPending, error: oauthError } = useOAuth()
 
   // Animation values
   const fadeIn = useSharedValue(0)
@@ -74,6 +78,12 @@ const Register = () => {
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+    if (authError) {
+      setAuthError(null)
+    }
+    if (successMessage) {
+      setSuccessMessage(null)
     }
   }
 
@@ -124,22 +134,48 @@ const Register = () => {
       triggerShake()
       return
     }
-    setIsLoading(true)
-    spinner.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false)
     try {
       const payload = {
         displayName: formData.displayName.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password
       }
-      console.log('Registration payload prepared:', payload)
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      console.log('Registration successful!')
+      setAuthError(null)
+      const response = await signUp({
+        email: payload.email,
+        password: payload.password,
+        metadata: { display_name: payload.displayName }
+      })
+
+      if ((response as any)?.error) {
+        throw new Error((response as any).error?.message ?? 'Unable to create account right now.')
+      }
+
+      setSuccessMessage('Account created successfully. Please verify your email to continue.')
+      setTimeout(() => {
+        router.push('/auth/login')
+      }, 500)
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to create account right now. Please try again.'
+      setAuthError(message)
+      triggerShake()
       console.error('Registration failed:', error)
     } finally {
-      setIsLoading(false)
-      spinner.value = 0
+      // spinner controlled by effect
+    }
+  }
+
+  const handleSocialRegister = async () => {
+    try {
+      setAuthError(null)
+      setSuccessMessage(null)
+      await performOAuth()
+      router.push('/(tabs)/home')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to continue with Google right now. Please try again.'
+      setAuthError(message)
+      triggerShake()
+      console.error('OAuth signup failed:', error)
     }
   }
 
@@ -148,6 +184,28 @@ const Register = () => {
   }))
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }))
   const spinnerStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${spinner.value}deg` }] }))
+
+  useEffect(() => {
+    if (isPending || isOAuthPending) {
+      spinner.value = withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false)
+    } else {
+      spinner.value = 0
+    }
+  }, [isPending, isOAuthPending])
+
+  useEffect(() => {
+    if (signUpError) {
+      const message = signUpError instanceof Error ? signUpError.message : 'Unable to create account right now. Please try again.'
+      setAuthError(message)
+    }
+  }, [signUpError])
+
+  useEffect(() => {
+    if (oauthError) {
+      const message = oauthError instanceof Error ? oauthError.message : 'Unable to continue with Google right now. Please try again.'
+      setAuthError(message)
+    }
+  }, [oauthError])
 
   return (
     <SafeAreaView className={`flex-1 ${theme} bg-background`}>
@@ -274,7 +332,7 @@ const Register = () => {
               </View>
 
               {/* Confirm Password Input */}
-              <View className="mb-6">
+              <View className="mb-4">
                 <Text className="text-sm font-semibold text-foreground mb-2">
                   Confirm Password
                 </Text>
@@ -311,26 +369,38 @@ const Register = () => {
                 )}
               </View>
 
+              {authError && (
+                <View className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+                  <Text className="text-xs text-destructive font-medium">{authError}</Text>
+                </View>
+              )}
+
+              {successMessage && (
+                <View className="mb-4 rounded-xl border border-emerald-300/40 bg-emerald-500/10 px-4 py-3">
+                  <Text className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{successMessage}</Text>
+                </View>
+              )}
+
               {/* Register Button */}
               <TouchableOpacity
                 onPress={handleRegister}
-                disabled={isLoading}
+                disabled={isPending || isOAuthPending}
                 className={`bg-primary rounded-xl h-14 justify-center items-center flex-row shadow-lg ${
-                  isLoading ? 'opacity-70' : 'opacity-100'
+                  (isPending || isOAuthPending) ? 'opacity-70' : 'opacity-100'
                 }`}
                 accessibilityRole="button"
                 accessibilityLabel="Create your account"
               >
-                {isLoading && (
+                {(isPending || isOAuthPending) && (
                   <Animated.View className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full mr-3" style={spinnerStyle} />
                 )}
                 <Text className="text-base font-semibold text-primary-foreground">
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                  {isPending || isOAuthPending ? 'Creating Account...' : 'Create Account'}
                 </Text>
               </TouchableOpacity>
 
               {/* OR Divider */}
-              <View className="flex-row items-center my-6" accessibilityElementsHidden={isLoading} importantForAccessibility="no-hide-descendants">
+              <View className="flex-row items-center my-6" accessibilityElementsHidden={isPending || isOAuthPending} importantForAccessibility="no-hide-descendants">
                 <View className="flex-1 h-px bg-border" />
                 <Text className="px-4 text-sm text-muted-foreground">or continue with</Text>
                 <View className="flex-1 h-px bg-border" />
@@ -340,16 +410,22 @@ const Register = () => {
         <View className="flex-row justify-center gap-x-4 mb-4">
                 {/* Google */}
                 <TouchableOpacity
-                  onPress={() => console.log('Google signup')}
-                  className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
-          accessibilityLabel="Sign up with Google"
+                  onPress={handleSocialRegister}
+                  disabled={isOAuthPending}
+                  className={`w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm ${isOAuthPending ? 'opacity-60' : ''}`}
+                  accessibilityLabel="Sign up with Google"
                 >
-                  <Ionicons name="logo-google" size={24} color="#4285F4" />
+                  {isOAuthPending ? (
+                    <ActivityIndicator size="small" color={colorScheme === 'dark' ? '#ffffff' : '#222222'} />
+                  ) : (
+                    <Ionicons name="logo-google" size={24} color="#4285F4" />
+                  )}
                 </TouchableOpacity>
 
                 {/* GitHub */}
                 <TouchableOpacity
-                  onPress={() => console.log('GitHub signup')}
+                  onPress={() => console.log('GitHub signup coming soon')}
+                  disabled={isOAuthPending}
                   className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
                   accessibilityLabel="Sign up with GitHub"
                 >
@@ -358,7 +434,8 @@ const Register = () => {
 
                 {/* Twitter/X */}
                 <TouchableOpacity
-                  onPress={() => console.log('Twitter signup')}
+                  onPress={() => console.log('Twitter signup coming soon')}
+                  disabled={isOAuthPending}
                   className="w-14 h-14 bg-card border border-border rounded-xl justify-center items-center shadow-sm"
                   accessibilityLabel="Sign up with Twitter"
                 >
