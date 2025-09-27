@@ -8,7 +8,10 @@ import Animated, {
   Extrapolate, 
   useAnimatedScrollHandler,
   runOnJS,
-  SharedValue
+  runOnUI,
+  SharedValue,
+  useAnimatedRef,
+  scrollTo,
 } from 'react-native-reanimated';
 import { useThemedColors } from '@/hooks/useThemedColors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -125,7 +128,7 @@ const Dot: React.FC<{ i: number; width: number; scrollX: SharedValue<number>; }>
 const WelcomeScreen: React.FC = () => {
   const { theme, colors } = useThemedColors();
   const { width: winWidth } = useWindowDimensions();
-  const scrollRef = useRef<Animated.ScrollView | null>(null);
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollX = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const lastReported = useRef(0);
@@ -151,7 +154,17 @@ const WelcomeScreen: React.FC = () => {
   };
 
   const goTo = (index: number) => {
-    scrollRef.current?.scrollTo({ x: index * winWidth, animated: true });
+    const clamped = Math.max(0, Math.min(slides.length - 1, index));
+    const x = clamped * winWidth;
+    // Primary: UI-thread scroll for Animated.ScrollView
+    runOnUI(() => {
+      'worklet';
+      scrollTo(scrollRef, x, 0, true);
+    })();
+    // Fallback: JS-thread scroll for non-reanimated environments
+    setTimeout(() => {
+      scrollRef?.current?.scrollTo?.({ x, y: 0, animated: true });
+    }, 0);
   };
 
   return (
@@ -163,9 +176,10 @@ const WelcomeScreen: React.FC = () => {
       </View>
 
       <Animated.ScrollView
-        ref={scrollRef as any}
+        ref={scrollRef}
         horizontal
         pagingEnabled
+        scrollEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -195,27 +209,27 @@ const WelcomeScreen: React.FC = () => {
           <Text className="text-xs font-medium text-primary">Learn more about how Catcher works</Text>
         </Pressable>
 
-  <View className="flex-row items-center justify-between">
-          {/* Back */}
-            <Pressable
-              disabled={activeIndex === 0}
-              onPress={() => goTo(Math.max(0, activeIndex - 1))}
-              className={`px-4 py-3 rounded-xl border border-border ${activeIndex === 0 ? 'opacity-30' : 'opacity-100'}`}
-            >
-              <Text className="text-sm text-foreground">Back</Text>
-            </Pressable>
+        <View className="flex-row items-center justify-between">
+                {/* Back */}
+                  <Pressable
+                    disabled={activeIndex === 0}
+                    onPress={() => goTo(Math.max(0, activeIndex - 1))}
+                    className={`px-4 py-3 rounded-xl border border-border ${activeIndex === 0 ? 'opacity-30' : 'opacity-100'}`}
+                  >
+                    <Text className="text-sm text-foreground">Back</Text>
+                  </Pressable>
 
-          <Pressable
-            onPress={() => {
-              if (activeIndex === slides.length - 1) handleGetStarted(); else goTo(activeIndex + 1);
-            }}
-            className="flex-1 ml-4 rounded-xl bg-primary py-4 items-center shadow-lg"
-          >
-            <Text className="text-base font-semibold text-primary-foreground">
-              {activeIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-            </Text>
-          </Pressable>
-  </View>
+                <Pressable
+                  onPress={() => {
+                    if (activeIndex === slides.length - 1) handleGetStarted(); else goTo(activeIndex + 1);
+                  }}
+                  className="flex-1 ml-4 rounded-xl bg-primary py-4 items-center shadow-lg"
+                >
+                  <Text className="text-base font-semibold text-primary-foreground">
+                    {activeIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+                  </Text>
+                </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
