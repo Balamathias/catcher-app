@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     createItem,
     getItem,
@@ -11,6 +11,8 @@ import {
     getItemsAnalytics,
     initiatePayment,
     verifyPayment,
+    updateItem,
+    deleteItem,
 } from "./api";
 
 export const QUERY_KEYS = {
@@ -24,6 +26,8 @@ export const QUERY_KEYS = {
     getItemsAnalytics: 'getItemsAnalytics',
     initiatePayment: 'initiatePayment',
     verifyPayment: 'verifyPayment',
+    updateItem: 'updateItem',
+    deleteItem: 'deleteItem',
 } as const
 
 export const useGetCurrentUser = () => {
@@ -64,6 +68,20 @@ export const useGetItems = (params: {
     })
 }
 
+export const useInfiniteItems = (pageSize = 20, filters?: { status?: string; query?: string }) => {
+    return useInfiniteQuery({
+        queryKey: [QUERY_KEYS.getItems, { pageSize, ...filters }],
+        queryFn: ({ pageParam = 0 }) =>
+            getItems({ limit: pageSize, offset: pageParam, ...filters }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            const fetched = allPages.reduce((acc, p) => acc + (p.data?.length || 0), 0);
+            const total = lastPage.count ?? 0;
+            return fetched < total ? fetched : undefined;
+        }
+    });
+}
+
 export const useGetItem = (id: string) => {
     return useQuery({
         queryKey: [QUERY_KEYS.getItem, id],
@@ -78,8 +96,34 @@ export const useCreateItem = () => {
         mutationFn: createItem,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItems] })
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItemsAnalytics] })
         }
     })
+}
+
+export const useUpdateItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: [QUERY_KEYS.updateItem],
+        mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateItem>[1] }) => updateItem(id, data),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItem, variables.id] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItems] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItemsAnalytics] });
+        }
+    });
+}
+
+export const useDeleteItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: [QUERY_KEYS.deleteItem],
+        mutationFn: (id: string) => deleteItem(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItems] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItemsAnalytics] });
+        }
+    });
 }
 
 export const useSearchRegistry = () => {
@@ -93,7 +137,6 @@ export const useGetItemsAnalytics = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.getItemsAnalytics],
         queryFn: getItemsAnalytics,
-        staleTime: 1000 * 60 * 2,
     })
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, Pressable, TouchableOpacity, ScrollView, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemedColors } from '@/hooks/useThemedColors';
 import { useSession } from '@/contexts/session-context';
@@ -12,7 +12,7 @@ const HomeScreen = () => {
   
   const { theme, colors } = useThemedColors();
   const { user } = useSession()
-  const { data, isLoading, isError } = useGetItemsAnalytics();
+  const { data, isLoading, isError, refetch, isRefetching } = useGetItemsAnalytics();
   const analytics = data?.data;
 
   const total = analytics?.totals.total ?? 0;
@@ -26,7 +26,10 @@ const HomeScreen = () => {
   return (
     <SafeAreaView className={`flex-1 ${theme} bg-background`} edges={['bottom']}>
       <StackHeader subtitle={''} />
-      <ScrollView contentContainerClassName="px-6 py-6 pb-8 gap-y-5">
+      <ScrollView
+        contentContainerClassName="px-6 py-6 pb-8 gap-y-5"
+        refreshControl={<RefreshControl refreshing={!!isRefetching} onRefresh={refetch} />}
+      >
         
         <View>
           <Text className="text-xl font-semibold text-foreground mb-1">{user ? `Hi, @${user?.user_metadata?.display_name}` : 'Welcome'}</Text>
@@ -115,8 +118,8 @@ const HomeScreen = () => {
         <View className="rounded-xl border border-border/60 bg-card p-4 gap-y-3">
           <View className="flex-row items-center justify-between">
             <Text className="text-sm font-medium text-foreground">Recent items</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/create')}>
-              <Text className="text-xs text-primary">Add new</Text>
+            <TouchableOpacity onPress={() => router.push('/items' as any)} activeOpacity={0.7}>
+              <Text className="text-xs text-primary">See All</Text>
             </TouchableOpacity>
           </View>
           {isLoading ? (
@@ -130,6 +133,9 @@ const HomeScreen = () => {
               {analytics.recent_items.map((it) => (
                 <RecentItem key={it.id} item={it} />
               ))}
+              <TouchableOpacity onPress={() => router.push('/items/index')} className="self-start">
+                <Text className="text-xs text-primary">See All</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <View className="items-start">
@@ -229,7 +235,7 @@ const CategoryBar = ({ label, count, total }: { label: string; count: number; to
 const RecentItem = ({ item }: { item: { id: string; name: string; status: 'safe' | 'stolen' | 'unknown'; category: string | null; created_at: string; image_url: string | null; serial_number: string } }) => {
   const statusTone = item.status === 'safe' ? 'bg-emerald-500/15 text-emerald-600' : item.status === 'stolen' ? 'bg-red-500/15 text-red-600' : 'bg-amber-500/15 text-amber-600';
   return (
-    <View className="flex-row items-center gap-3">
+    <Pressable className="flex-row items-center gap-3" onPress={() => router.push(`/items/${item.id}` as any)}>
       <View className="w-10 h-10 rounded-lg bg-muted/50 overflow-hidden items-center justify-center">
         {item.image_url ? (
           <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -244,7 +250,7 @@ const RecentItem = ({ item }: { item: { id: string; name: string; status: 'safe'
       <View className={`px-2 py-1 rounded-full ${statusTone}`}>
         <Text className="text-[10px] font-medium capitalize">{item.status}</Text>
       </View>
-    </View>
+    </Pressable>
   )
 }
 

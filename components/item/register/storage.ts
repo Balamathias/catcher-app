@@ -31,29 +31,52 @@ const createStoragePath = (extension: string) => {
   return `items/${Date.now()}-${random}.${extension}`;
 };
 
-const toBlob = async (image: Img, contentType: string) => {
-  if (image.base64) {
-    const dataUrl = `data:${contentType};base64,${image.base64}`;
-    const data = await fetch(dataUrl);
-    return data.blob();
-  }
+// Minimal base64 decoder (no padding issues) to Uint8Array for RN without atob
+const base64ToUint8Array = (b64: string): Uint8Array => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let str = b64.replace(/\s+/g, '');
+  let outputLength = (str.length * 3) / 4 - (str.endsWith('==') ? 2 : str.endsWith('=') ? 1 : 0);
+  const bytes = new Uint8Array(outputLength | 0);
 
-  const response = await fetch(image.uri);
-  if (!response.ok) {
-    throw new Error('Unable to read selected image.');
+  let enc1 = 0, enc2 = 0, enc3 = 0, enc4 = 0;
+  let i = 0, p = 0;
+  while (i < str.length) {
+    enc1 = chars.indexOf(str.charAt(i++));
+    enc2 = chars.indexOf(str.charAt(i++));
+    enc3 = chars.indexOf(str.charAt(i++));
+    enc4 = chars.indexOf(str.charAt(i++));
+
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+
+    bytes[p++] = chr1;
+    if (enc3 !== 64 && p < bytes.length) bytes[p++] = chr2;
+    if (enc4 !== 64 && p < bytes.length) bytes[p++] = chr3;
   }
-  return response.blob();
+  return bytes;
 };
 
 export const uploadLocalImage = async (image: Img) => {
   const extension = getExtension(image.uri, image.filename);
   const contentType = getContentType(extension);
   const storagePath = createStoragePath(extension);
-  const blob = await toBlob(image, contentType);
+  let body: ArrayBufferView | ArrayBuffer;
 
-  const { error } = await supabase.storage.from('images').upload(storagePath, blob, {
-    // contentType,
-    // cacheControl: '3600'
+  if (image.base64) {
+    body = base64ToUint8Array(image.base64);
+  } else if (/^https?:\/\//i.test(image.uri)) {
+    // Fallback for http(s) URLs (not file://) if base64 is missing
+    const resp = await fetch(image.uri);
+    if (!resp.ok) throw new Error('Unable to read image from URL.');
+    body = await resp.arrayBuffer();
+  } else {
+    throw new Error('Unable to read selected image. Please re-select the image.');
+  }
+
+  const { error } = await supabase.storage.from('images').upload(storagePath, body as any, {
+    contentType,
+    cacheControl: '3600'
   });
 
   if (error) {

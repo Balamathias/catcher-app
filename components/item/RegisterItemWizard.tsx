@@ -14,9 +14,10 @@ import { StepReview } from './register/steps/StepReview';
 import { StepNavigation } from './register/StepNavigation';
 import { uploadLocalImages } from './register/storage';
 import type { FormValues, Img, WizardStep } from './register/types';
-import { useCreateItem, useInitiatePayment, useVerifyPayment } from '@/services/api-hooks';
+import { QUERY_KEYS, useCreateItem, useInitiatePayment, useVerifyPayment } from '@/services/api-hooks';
 import { Tables } from '@/types/supabase';
 import { PaystackSheet } from '@/components/payments/PaystackSheet';
+import { useQueryClient } from '@tanstack/react-query';
 
 const defaultValues: FormValues = {
   name: '',
@@ -40,7 +41,9 @@ const RegisterItemWizard: React.FC = () => {
   const [paymentRef, setPaymentRef] = useState<string | undefined>();
   const [paymentVerified, setPaymentVerified] = useState(false);
 
-  const { mutate: createItem } = useCreateItem();
+  const queryClient = useQueryClient()
+
+  const { mutate: createItem, isPending: isCreating } = useCreateItem();
   const { mutate: startPayment, isPending: isInitPay } = useInitiatePayment();
   const { mutate: checkPayment, isPending: isVerifyPay } = useVerifyPayment();
 
@@ -160,6 +163,10 @@ const RegisterItemWizard: React.FC = () => {
   );
 
   const launchPayment = useCallback((email: string) => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('Invalid Email', 'Please provide a valid email address in the Owner step.');
+      return;
+    }
     startPayment(email, {
       onSuccess: (resp) => {
         if (!resp?.data) {
@@ -169,6 +176,7 @@ const RegisterItemWizard: React.FC = () => {
         setPaymentUrl(resp.data.authorization_url);
         setPaymentRef(resp.data.reference);
         setPaymentVisible(true);
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItemsAnalytics] });
       },
       onError: (err) => {
         const msg = err instanceof Error ? err.message : 'Unable to start payment';
@@ -282,7 +290,7 @@ const RegisterItemWizard: React.FC = () => {
       break;
     case 4:
       currentStepContent = (
-        <StepReview values={formValues} submitting={submitting || isInitPay || isVerifyPay} colors={colors} onSubmit={reviewSubmitHandler} />
+        <StepReview values={formValues} submitting={submitting || isInitPay || isVerifyPay || isCreating} colors={colors} onSubmit={reviewSubmitHandler} />
       );
       break;
     default:
@@ -306,21 +314,21 @@ const RegisterItemWizard: React.FC = () => {
 
         {currentStepContent}
 
-        <StepNavigation step={step} canProceed={nextEnabled} submitting={submitting || isInitPay || isVerifyPay} onBack={() => go(-1)} onNext={() => go(1)} />
+        <StepNavigation step={step} canProceed={nextEnabled} submitting={submitting || isInitPay || isVerifyPay || isCreating} onBack={() => go(-1)} onNext={() => go(1)} />
       </ScrollView>
 
       <PaystackSheet
         visible={paymentVisible}
         authorizationUrl={paymentUrl}
+        meta={{ email: formValues.contact, amount: 500 * 100 }}
+        success={paymentVerified}
         onClose={() => setPaymentVisible(false)}
         onCompleted={(url) => {
-          // If server configured callback, we might get called with redirect URL
           if (paymentRef) {
             checkPayment(paymentRef, {
               onSuccess: (resp) => {
                 if (resp?.data?.verified) {
                   setPaymentVerified(true);
-                  // After verification, perform the actual submission with existing values
                   submitRegistration(formValues, true);
                 }
               }

@@ -39,6 +39,7 @@ export default function RootLayout() {
               guard={!user}
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="items" options={{ headerShown: false }} />
             </Stack.Protected>
           </Stack>
         </SessionProvider>
