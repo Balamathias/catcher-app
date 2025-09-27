@@ -1,192 +1,112 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    createRating,
-    deleteAccount,
-    generatePalmpayAccount,
-    getAccount,
-    getAppConfig,
-    getBeneficiaries,
-    getLatestTransactions,
-    getNotifications,
-    getTransaction,
-    getTransactions,
+    createItem,
+    getItem,
+    getItems,
     getUserProfile,
-    getWalletBalance,
-    listDataPlans,
-    listElectricityServices,
-    listRatings,
-    listTVServices,
-    processTransaction,
-    requestPinResetOTP,
-    resetPinWithOTP,
-    verifyMerchant,
-    verifyPhone,
-    verifyPin,
-    verifyResetPinOTP,
-    generateReservedAccount,
-    createPushToken,
+    getCurrentUser,
     updateProfile,
+    searchRegistry,
+    RegistrySearchPayload,
+    getItemsAnalytics,
+    initiatePayment,
+    verifyPayment,
 } from "./api";
 
 export const QUERY_KEYS = {
-    getAccount: 'getAccount',
-    generatePalmpayAccount: 'generatePalmpayAccount',
+    getCurrentUser: 'getCurrentUser',
     getUserProfile: 'getUserProfile',
-    getWalletBalance: 'getWalletBalance',
-    getLatestTransactions: 'getLatestTransactions',
-    getTransactions: 'getTransactions',
-    getTransaction: 'getTransaction',
-    processTransaction: 'processTransaction',
-    verifyPin: 'verifyPin',
-    listDataPlans: 'listDataPlans',
-    verifyPhone: 'verifyPhone',
-    getNotifications: 'getNotifications',
-    getBeneficiaries: 'getBeneficiaries',
-    listElectricityServices: 'listElectricityServices',
-    listTVServices: 'listTVServices',
-    getAppConfig: 'getAppConfig',
-    verifyMerchant: 'verifyMerchant',
-    listRatings: 'listRatings',
-    createRating: 'createRating',
-    deleteAccount: 'deleteAccount',
-    resetPinWithOTP: 'resetPinWithOTP',
-    verifyResetPinOTP: 'verifyResetPinOTP',
-    requestPinResetOTP: 'requestPinResetOTP',
-    generateReservedAccount: 'generateReservedAccount',
-    createPushToken: 'createPushToken',
+    getItems: 'getItems',
+    getItem: 'getItem',
+    createItem: 'createItem',
     updateProfile: 'updateProfile',
+    searchRegistry: 'searchRegistry',
+    getItemsAnalytics: 'getItemsAnalytics',
+    initiatePayment: 'initiatePayment',
+    verifyPayment: 'verifyPayment',
 } as const
 
-export const useGetAccount = (id?: string) => useQuery({
-    queryKey: [QUERY_KEYS.getAccount, id],
-    queryFn: () => getAccount(id),
-    refetchOnMount: true
-})
+export const useGetCurrentUser = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getCurrentUser],
+        queryFn: getCurrentUser
+    })
+}
 
-export const useGeneratePalmpayAccount = () => useMutation({
-    mutationKey: [QUERY_KEYS.generatePalmpayAccount],
-    mutationFn: generatePalmpayAccount,
-})
+export const useGetUserProfile = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getUserProfile],
+        queryFn: getUserProfile,
+        staleTime: 1000 * 60 * 5,
+    })
+}
 
-export const useGetUserProfile = () => useQuery({
-    queryKey: [QUERY_KEYS.getUserProfile],
-    queryFn: getUserProfile,
-})
+export const useUpdateProfile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: [QUERY_KEYS.updateProfile],
+        mutationFn: updateProfile,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getUserProfile] })
+        }
+    })
+}
 
-export const useGetWalletBalance = () => useQuery({
-    queryKey: [QUERY_KEYS.getWalletBalance],
-    queryFn: getWalletBalance,
-})
+export const useGetItems = (params: {
+    limit?: number,
+    offset?: number,
+    status?: string,
+    query?: string
+}) => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getItems, params],
+        queryFn: () => getItems(params)
+    })
+}
 
-export const useGetLatestTransactions = () => useQuery({
-    queryKey: [QUERY_KEYS.getLatestTransactions],
-    queryFn: getLatestTransactions,
-})
+export const useGetItem = (id: string) => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getItem, id],
+        queryFn: () => getItem(id)
+    })
+}
 
-export const useGetTransactions = (limit: number = 30, offset: number = 0) => useQuery({
-    queryKey: [QUERY_KEYS.getTransactions, limit, offset],
-    queryFn: () => getTransactions(limit, offset),
-})
+export const useCreateItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: [QUERY_KEYS.createItem],
+        mutationFn: createItem,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItems] })
+        }
+    })
+}
 
-export const useGetTransaction = (id: string) => useQuery({
-    queryKey: [QUERY_KEYS.getTransaction, id],
-    queryFn: () => getTransaction(id),
-})
+export const useSearchRegistry = () => {
+    return useMutation({
+        mutationKey: [QUERY_KEYS.searchRegistry],
+        mutationFn: (params: RegistrySearchPayload) => searchRegistry(params)
+    })
+}
 
-export const useProcessTransaction = () => useMutation({
-    mutationKey: [QUERY_KEYS.processTransaction],
-    mutationFn: processTransaction,
-})
+export const useGetItemsAnalytics = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getItemsAnalytics],
+        queryFn: getItemsAnalytics,
+        staleTime: 1000 * 60 * 2,
+    })
+}
 
-export const useVerifyPin = () => useMutation({
-    mutationKey: [QUERY_KEYS.verifyPin],
-    mutationFn: verifyPin,
-})
+export const useInitiatePayment = () => {
+    return useMutation({
+        mutationKey: [QUERY_KEYS.initiatePayment],
+        mutationFn: (email: string) => initiatePayment(email),
+    })
+}
 
-export const useListDataPlans = () => useQuery({
-    queryKey: [QUERY_KEYS.listDataPlans],
-    queryFn: listDataPlans,
-})
-
-export const useVerifyPhone = () => useMutation({
-    mutationKey: [QUERY_KEYS.verifyPhone],
-    mutationFn: verifyPhone,
-})
-
-export const useGetNotifications = () => useQuery({
-    queryKey: [QUERY_KEYS.getNotifications],
-    queryFn: getNotifications,
-    refetchOnMount: true
-})
-
-export const useGetBeneficiaries = (limit: number = 5) => useQuery({
-    queryKey: [QUERY_KEYS.getBeneficiaries, limit],
-    queryFn: () => getBeneficiaries(limit),
-})
-
-export const useListElectricityServices = () => useQuery({
-    queryKey: [QUERY_KEYS.listElectricityServices],
-    queryFn: listElectricityServices,
-})
-
-export const useListTVServices = () => useQuery({
-    queryKey: [QUERY_KEYS.listTVServices],
-    queryFn: listTVServices,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-})
-
-export const useGetAppConfig = () => useQuery({
-    queryKey: [QUERY_KEYS.getAppConfig],
-    queryFn: getAppConfig,
-})
-
-export const useVerifyMerchant = () => useMutation({
-    mutationKey: [QUERY_KEYS.verifyMerchant],
-    mutationFn: verifyMerchant,
-});
-
-export const useListRatings = (limit?: number, offset?: number) => useQuery({
-    queryKey: [QUERY_KEYS.listRatings, limit, offset],
-    queryFn: () => listRatings(limit, offset),
-});
-
-export const useCreateRating = () => useMutation({
-    mutationKey: [QUERY_KEYS.createRating],
-    mutationFn: createRating,
-});
-
-export const useDeleteAccount = () => useMutation({
-    mutationKey: [QUERY_KEYS.deleteAccount],
-    mutationFn: deleteAccount,
-});
-
-export const useResetPinWithOTP = () => useMutation({
-    mutationKey: [QUERY_KEYS.resetPinWithOTP],
-    mutationFn: resetPinWithOTP,
-});
-
-export const useVerifyResetPinOTP = () => useMutation({
-    mutationKey: [QUERY_KEYS.verifyResetPinOTP],
-    mutationFn: verifyResetPinOTP,
-});
-
-export const useRequestPinResetOTP = () => useMutation({
-    mutationKey: [QUERY_KEYS.requestPinResetOTP],
-    mutationFn: requestPinResetOTP,
-});
-
-export const useGenerateReservedAccount = () => useMutation({
-    mutationKey: [QUERY_KEYS.generateReservedAccount],
-    mutationFn: generateReservedAccount,
-});
-
-export const useCreatePushToken = () => useMutation({
-    mutationKey: [QUERY_KEYS.createPushToken],
-    mutationFn: createPushToken,
-});
-
-export const useUpdateProfile = () => useMutation({
-    mutationKey: [QUERY_KEYS.updateProfile],
-    mutationFn: updateProfile,
-});
+export const useVerifyPayment = () => {
+    return useMutation({
+        mutationKey: [QUERY_KEYS.verifyPayment],
+        mutationFn: (reference: string) => verifyPayment(reference),
+    })
+}

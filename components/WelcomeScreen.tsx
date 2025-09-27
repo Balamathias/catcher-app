@@ -7,11 +7,13 @@ import Animated, {
   interpolate, 
   Extrapolate, 
   useAnimatedScrollHandler,
-  runOnJS
+  runOnJS,
+  SharedValue
 } from 'react-native-reanimated';
 import { useThemedColors } from '@/hooks/useThemedColors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useSession } from '@/contexts/session-context';
 
 interface Slide {
   key: string;
@@ -51,7 +53,7 @@ const slides: Slide[] = [
 
 const DOT_SIZE = 8;
 
-const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX: Animated.SharedValue<number>; colors: any; onSearchPress?: () => void; }> = ({ slide, index, width, scrollX, colors, onSearchPress }) => {
+const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX: SharedValue<number>; colors: any; onSearchPress?: () => void; }> = ({ slide, index, width, scrollX, colors, onSearchPress }) => {
   const circleStyle = useAnimatedStyle(() => {
     const input = [(index - 1) * width, index * width, (index + 1) * width];
     return {
@@ -108,7 +110,7 @@ const SlideItem: React.FC<{ slide: Slide; index: number; width: number; scrollX:
   );
 };
 
-const Dot: React.FC<{ i: number; width: number; scrollX: Animated.SharedValue<number>; }> = ({ i, width, scrollX }) => {
+const Dot: React.FC<{ i: number; width: number; scrollX: SharedValue<number>; }> = ({ i, width, scrollX }) => {
   const style = useAnimatedStyle(() => {
     const input = [(i - 1) * width, i * width, (i + 1) * width];
     return {
@@ -127,6 +129,8 @@ const WelcomeScreen: React.FC = () => {
   const scrollX = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const lastReported = useRef(0);
+
+  const { user } = useSession()
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {

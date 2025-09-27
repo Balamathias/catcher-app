@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import axios from 'axios';
 
-const API_URL = 'https://isubscribe-ai-microservice.vercel.app/api/v1';
+const API_URL = 'https://f004b30834f3.ngrok-free.app/api/v1';
 
 const client = axios.create({
   baseURL: API_URL,

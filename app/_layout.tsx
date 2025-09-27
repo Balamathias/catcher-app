@@ -7,7 +7,7 @@ import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SessionProvider } from '@/contexts/session-context';
+import { SessionProvider, useSession } from '@/contexts/session-context';
 
 const queryClient = new QueryClient();
 
@@ -15,6 +15,7 @@ const queryClient = new QueryClient();
 export default function RootLayout() {
 
   const { theme } = useThemedColors();
+  const { user } = useSession()
 
   AppState.addEventListener('change', (state) => {
     if (state === 'active') {
@@ -34,7 +35,11 @@ export default function RootLayout() {
             <Stack.Screen name="info" options={{ headerShown: false }} />
             <Stack.Screen name="auth/login" options={{ headerShown: false, presentation: 'modal' }} />
             <Stack.Screen name="auth/register" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Protected
+              guard={!user}
+            >
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack.Protected>
           </Stack>
         </SessionProvider>
       </QueryClientProvider>
