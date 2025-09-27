@@ -320,7 +320,7 @@ const RegisterItemWizard: React.FC = () => {
       <PaystackSheet
         visible={paymentVisible}
         authorizationUrl={paymentUrl}
-        meta={{ email: formValues.contact, amount: 500 * 100 }}
+        meta={{ email: formValues.contact, amount: REG_FEE * 100 }}
         success={paymentVerified}
         onClose={() => setPaymentVisible(false)}
         onCompleted={(url) => {
