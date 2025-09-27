@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Catcher Mobile",
-    "slug": "catcher-app",
+    "slug": "catcherapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -50,7 +50,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5d456d93-f027-4bbe-a5cd-5d9531ebea10"
+        "projectId": "3aa21334-eea3-4a34-b5ed-e0a233d6f71d"
       }
     },
     "owner": "matiecodes"

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useForm, useWatch } from 'react-hook-form';
 import { useThemedColors } from '@/hooks/useThemedColors';
@@ -18,6 +18,7 @@ import { QUERY_KEYS, useCreateItem, useInitiatePayment, useVerifyPayment } from 
 import { Tables } from '@/types/supabase';
 import { PaystackSheet } from '@/components/payments/PaystackSheet';
 import { useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 
 const defaultValues: FormValues = {
   name: '',
@@ -32,7 +33,7 @@ const defaultValues: FormValues = {
 
 const RegisterItemWizard: React.FC = () => {
   const { colors } = useThemedColors();
-  const [step, setStep] = useState<WizardStep>(3);
+  const [step, setStep] = useState<WizardStep>(0);
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -60,6 +61,15 @@ const RegisterItemWizard: React.FC = () => {
 
   const formValues = (useWatch({ control }) as FormValues) ?? defaultValues;
   const { name, serial, category, status } = formValues;
+
+  const STEP_TITLES: Record<WizardStep, string> = {
+    0: 'Basics',
+    1: 'Classification',
+    2: 'Media',
+    3: 'Owner',
+    4: 'Review',
+  };
+  const progressPct = ((step + 1) / 5) * 100;
 
   const nextEnabled = useMemo(() => {
     if (step === 0) return !!name.trim() && !!serial.trim();
@@ -298,24 +308,54 @@ const RegisterItemWizard: React.FC = () => {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 py-4">
-      <ScrollView keyboardShouldPersistTaps="handled" className="px-6">
-        <Text className="text-4xl font-semibold text-foreground mb-1">Register New Item</Text>
-        <Text className="text-sm text-muted-foreground mb-6">Add an item to the registry by filling out the form below.</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+      <ScrollView keyboardShouldPersistTaps="handled" className="px-6" contentContainerClassName="py-4 pb-32 gap-y-4">
+        {/* Title & Step */}
+        <View className="gap-y-1">
+          <Text className="text-xl font-semibold text-foreground">Register New Item</Text>
+          <Text className="text-[12px] text-muted-foreground">Step {step + 1} of 5 • {STEP_TITLES[step]}</Text>
+        </View>
+        {/* Progress */}
+        <View className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
+          <View style={{ width: `${progressPct}%` }} className="h-full bg-primary" />
+        </View>
 
-        <View className="mb-8 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
-          <Text className="text-xs font-semibold text-primary mb-1">Registration Fee: ₦{REG_FEE.toLocaleString()}</Text>
-          <Text className="text-[11px] leading-4 text-muted-foreground">
-            You will be redirected to Paystack to complete payment before your item is registered.
-          </Text>
+        {/* Info */}
+        <View className="rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+          <View className="flex-row items-start gap-2">
+            <View className="w-6 h-6 rounded-full bg-primary/15 items-center justify-center mt-[1px]">
+              <Ionicons name="card" size={12} color={colors.primary} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-semibold text-primary mb-1">Registration Fee: ₦{REG_FEE.toLocaleString()}</Text>
+              <Text className="text-[11px] leading-4 text-muted-foreground">You’ll complete a quick, secure Paystack payment before your item is registered.</Text>
+            </View>
+          </View>
         </View>
 
         <ProgressDots step={step} />
 
         {currentStepContent}
-
-        <StepNavigation step={step} canProceed={nextEnabled} submitting={submitting || isInitPay || isVerifyPay || isCreating} onBack={() => go(-1)} onNext={() => go(1)} />
       </ScrollView>
+
+      {/* Sticky footer actions */}
+      <View className="px-6 pb-5 pt-3 border-t border-border/60 bg-background">
+        <StepNavigation
+          step={step}
+          canProceed={nextEnabled}
+          submitting={submitting || isInitPay || isVerifyPay || isCreating}
+          onBack={() => go(-1)}
+          onNext={() => go(1)}
+        />
+      </View>
+
+      {/* Submitting overlay */}
+      {(submitting || isInitPay || isVerifyPay || isCreating) && (
+        <View className="absolute inset-0 bg-background/60 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="mt-2 text-[12px] text-muted-foreground">Please wait…</Text>
+        </View>
+      )}
 
       <PaystackSheet
         visible={paymentVisible}
