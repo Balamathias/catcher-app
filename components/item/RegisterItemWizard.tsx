@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, AppState } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useForm, useWatch } from 'react-hook-form';
 import { useThemedColors } from '@/hooks/useThemedColors';
@@ -19,6 +19,10 @@ import { Tables } from '@/types/supabase';
 import { PaystackSheet } from '@/components/payments/PaystackSheet';
 import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PENDING_PAYMENT_KEY = '@catcher/pending-payment';
+const PAID_PAYMENT_REF_KEY = '@catcher/paid-ref';
 
 const defaultValues: FormValues = {
   name: '',
@@ -33,7 +37,7 @@ const defaultValues: FormValues = {
 
 const RegisterItemWizard: React.FC = () => {
   const { colors } = useThemedColors();
-  const [step, setStep] = useState<WizardStep>(0);
+  const [step, setStep] = useState<WizardStep>(3);
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,6 +45,7 @@ const RegisterItemWizard: React.FC = () => {
   const [paymentUrl, setPaymentUrl] = useState<string | undefined>();
   const [paymentRef, setPaymentRef] = useState<string | undefined>();
   const [paymentVerified, setPaymentVerified] = useState(false);
+  const [paidRefFromStorage, setPaidRefFromStorage] = useState<string | null>(null);
 
   const queryClient = useQueryClient()
 
@@ -186,6 +191,11 @@ const RegisterItemWizard: React.FC = () => {
         setPaymentUrl(resp.data.authorization_url);
         setPaymentRef(resp.data.reference);
         setPaymentVisible(true);
+        // Persist pending payment so it can be recovered after app background/kill
+        AsyncStorage.setItem(
+          PENDING_PAYMENT_KEY,
+          JSON.stringify({ reference: resp.data.reference, email, amount: resp.data.amount, ts: Date.now() })
+        ).catch(() => {});
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getItemsAnalytics] });
       },
       onError: (err) => {
@@ -204,6 +214,10 @@ const RegisterItemWizard: React.FC = () => {
           Alert.alert('Payment not verified', 'We could not verify your payment.');
           return;
         }
+        // Persist verified ref and clear pending
+        AsyncStorage.setItem(PAID_PAYMENT_REF_KEY, reference).catch(() => {});
+        AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
+        setPaidRefFromStorage(reference);
         // Proceed with submit
         submitRegistration(values, true);
       },
@@ -257,6 +271,11 @@ const RegisterItemWizard: React.FC = () => {
             reset({ ...defaultValues, category: values.category, status: values.status });
             setImgUrlInput('');
             setStep(0);
+            // Clear any stored payment state after success
+            AsyncStorage.removeItem(PAID_PAYMENT_REF_KEY).catch(() => {});
+            AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
+            setPaidRefFromStorage(null);
+            setPaymentVerified(false);
           },
           onError: (error) => {
             const message = error instanceof Error ? error.message : 'Unable to register item right now. Please try again.';
@@ -276,7 +295,50 @@ const RegisterItemWizard: React.FC = () => {
     [reset, setValue, submitting, createItem, launchPayment]
   );
 
-  const reviewSubmitHandler = handleSubmit((vals) => submitRegistration(vals));
+  // Determine if we already have a verified payment (from this or previous session)
+  const hasVerifiedPayment = paymentVerified || !!paidRefFromStorage;
+
+  // Recover pending payment on mount and whenever app resumes to foreground
+  useEffect(() => {
+    let mounted = true;
+    const recover = async () => {
+      try {
+        const paidRef = await AsyncStorage.getItem(PAID_PAYMENT_REF_KEY);
+        if (!mounted) return;
+        if (paidRef) setPaidRefFromStorage(paidRef);
+
+        const pendingRaw = await AsyncStorage.getItem(PENDING_PAYMENT_KEY);
+        if (!pendingRaw) return;
+        const pending = JSON.parse(pendingRaw || '{}');
+        const ref: string | undefined = pending?.reference;
+        if (!ref) return;
+        // Try verifying silently
+        checkPayment(ref, {
+          onSuccess: (resp) => {
+            if (!mounted) return;
+            if (resp?.data?.verified) {
+              setPaymentVerified(true);
+              AsyncStorage.setItem(PAID_PAYMENT_REF_KEY, ref).catch(() => {});
+              AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
+              setPaidRefFromStorage(ref);
+            }
+          }
+        });
+      } catch {
+        // noop
+      }
+    };
+    recover();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') recover();
+    });
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, [checkPayment]);
+
+  const reviewSubmitHandler = handleSubmit((vals) => submitRegistration(vals, hasVerifiedPayment));
 
   let currentStepContent: React.ReactNode = null;
   switch (step) {
@@ -333,6 +395,21 @@ const RegisterItemWizard: React.FC = () => {
           </View>
         </View>
 
+        {/* Verified payment banner */}
+        {hasVerifiedPayment ? (
+          <View className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+            <View className="flex-row items-start gap-2">
+              <View className="w-6 h-6 rounded-full bg-emerald-500/15 items-center justify-center mt-[1px]">
+                <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs font-semibold" style={{ color: '#059669' }}>Payment verified</Text>
+                <Text className="text-[11px] leading-4" style={{ color: '#065f46' }}>You can complete registration without paying again.</Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
         <ProgressDots step={step} />
 
         {currentStepContent}
@@ -369,6 +446,9 @@ const RegisterItemWizard: React.FC = () => {
               onSuccess: (resp) => {
                 if (resp?.data?.verified) {
                   setPaymentVerified(true);
+                  AsyncStorage.setItem(PAID_PAYMENT_REF_KEY, paymentRef).catch(() => {});
+                  AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
+                  setPaidRefFromStorage(paymentRef);
                   submitRegistration(formValues, true);
                 }
               }

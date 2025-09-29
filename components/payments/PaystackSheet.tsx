@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useThemedColors } from '@/hooks/useThemedColors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export type PaystackSheetProps = {
   visible: boolean;
@@ -18,7 +19,7 @@ export const PaystackSheet: React.FC<PaystackSheetProps> = ({ visible, authoriza
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background">
         <View className="h-14 flex-row items-center justify-between px-4 border-b border-border/50 bg-card">
           <View>
             <Text className="text-foreground font-semibold">Pay with Paystack</Text>
@@ -52,7 +53,7 @@ export const PaystackSheet: React.FC<PaystackSheetProps> = ({ visible, authoriza
             startInLoadingState
           />
         )}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
