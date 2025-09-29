@@ -221,3 +221,17 @@ export const verifyPayment = async (reference: string): Promise<Response<{ verif
         }
     }
 }
+
+export const getCredits = async (): Promise<Response<{ available: number }>> => {
+    try {
+        const { data } = await microservice.get('/payments/credits/')
+        return data
+    } catch (error: any) {
+        return {
+            data: { available: 0 },
+            error: { message: error?.response?.data?.message || error?.message },
+            status: error?.response?.status,
+            message: error?.response?.data?.message || error?.message,
+        }
+    }
+}

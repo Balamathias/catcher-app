@@ -13,6 +13,7 @@ import {
     verifyPayment,
     updateItem,
     deleteItem,
+    getCredits,
 } from "./api";
 
 export const QUERY_KEYS = {
@@ -28,6 +29,7 @@ export const QUERY_KEYS = {
     verifyPayment: 'verifyPayment',
     updateItem: 'updateItem',
     deleteItem: 'deleteItem',
+    getCredits: 'getCredits',
 } as const
 
 export const useGetCurrentUser = () => {
@@ -151,5 +153,13 @@ export const useVerifyPayment = () => {
     return useMutation({
         mutationKey: [QUERY_KEYS.verifyPayment],
         mutationFn: (reference: string) => verifyPayment(reference),
+    })
+}
+
+export const useGetCredits = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getCredits],
+        queryFn: getCredits,
+        staleTime: 30_000, // 30s is fine; credits rarely change frequently
     })
 }

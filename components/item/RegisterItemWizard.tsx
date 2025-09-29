@@ -14,7 +14,7 @@ import { StepReview } from './register/steps/StepReview';
 import { StepNavigation } from './register/StepNavigation';
 import { uploadLocalImages } from './register/storage';
 import type { FormValues, Img, WizardStep } from './register/types';
-import { QUERY_KEYS, useCreateItem, useInitiatePayment, useVerifyPayment } from '@/services/api-hooks';
+import { QUERY_KEYS, useCreateItem, useInitiatePayment, useVerifyPayment, useGetCredits } from '@/services/api-hooks';
 import { Tables } from '@/types/supabase';
 import { PaystackSheet } from '@/components/payments/PaystackSheet';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,6 +52,7 @@ const RegisterItemWizard: React.FC = () => {
   const { mutate: createItem, isPending: isCreating } = useCreateItem();
   const { mutate: startPayment, isPending: isInitPay } = useInitiatePayment();
   const { mutate: checkPayment, isPending: isVerifyPay } = useVerifyPayment();
+  const { data: credits } = useGetCredits();
 
   const {
     control,
@@ -218,6 +219,7 @@ const RegisterItemWizard: React.FC = () => {
         AsyncStorage.setItem(PAID_PAYMENT_REF_KEY, reference).catch(() => {});
         AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
         setPaidRefFromStorage(reference);
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getCredits] });
         // Proceed with submit
         submitRegistration(values, true);
       },
@@ -276,6 +278,7 @@ const RegisterItemWizard: React.FC = () => {
             AsyncStorage.removeItem(PENDING_PAYMENT_KEY).catch(() => {});
             setPaidRefFromStorage(null);
             setPaymentVerified(false);
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.getCredits] });
           },
           onError: (error) => {
             const message = error instanceof Error ? error.message : 'Unable to register item right now. Please try again.';
@@ -296,7 +299,8 @@ const RegisterItemWizard: React.FC = () => {
   );
 
   // Determine if we already have a verified payment (from this or previous session)
-  const hasVerifiedPayment = paymentVerified || !!paidRefFromStorage;
+  const availableCredits = credits?.data?.available ?? 0;
+  const hasVerifiedPayment = paymentVerified || !!paidRefFromStorage || availableCredits > 0;
 
   // Recover pending payment on mount and whenever app resumes to foreground
   useEffect(() => {
