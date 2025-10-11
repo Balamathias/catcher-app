@@ -28,8 +28,8 @@ const StackHeader = ({
     const colors = COLORS[theme]
 
     const goSearch = () => (onSearchPress ? onSearchPress() : router.push('/search'))
-    const goNotifications = () =>
-        onNotificationsPress ? onNotificationsPress() : undefined
+    const goSettings = () =>
+        onNotificationsPress ? onNotificationsPress() : () => router.push('/settings')
     const goProfile = () => (onAvatarPress ? onAvatarPress() : undefined)
 
     return (
@@ -91,12 +91,12 @@ const StackHeader = ({
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
-                                        onPress={goNotifications}
+                                        onPress={() => router.push('/settings')}
                                         className="p-2 rounded-full bg-muted/30 relative"
                                         accessibilityRole="button"
-                                        accessibilityLabel="Notifications"
+                                        accessibilityLabel="Settings"
                                     >
-                                        <Ionicons name="notifications-outline" color={colors.foreground} size={20} />
+                                        <Ionicons name="settings-outline" color={colors.foreground} size={20} />
                                         {hasUnread && (
                                             <View className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary" />
                                         )}

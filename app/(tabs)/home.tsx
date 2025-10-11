@@ -32,7 +32,7 @@ const HomeScreen = () => {
       >
         
         <View>
-          <Text className="text-xl font-semibold text-foreground mb-1">{user ? `Hi, @${user?.user_metadata?.display_name}.` : 'Welcome'}</Text>
+          <Text className="text-xl font-semibold text-foreground mb-1">{user ? `Hi, ${user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'User'}.` : 'Welcome'}</Text>
           <Text className="text-sm text-muted-foreground">Welcome to Catcher, your personal dashboard for items, insights, and safety.</Text>
         </View>
 

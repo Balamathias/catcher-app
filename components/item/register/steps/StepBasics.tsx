@@ -12,7 +12,7 @@ interface StepBasicsProps {
 
 export const StepBasics: React.FC<StepBasicsProps> = ({ control, errors, colors, onSerialChange }) => (
   <View>
-    <Text className="text-xs font-medium text-muted-foreground mb-2">Item Name</Text>
+    <Text className="text-xs font-medium text-muted-foreground mb-2">Item Name *</Text>
     <Controller
       control={control}
       name="name"
@@ -33,7 +33,7 @@ export const StepBasics: React.FC<StepBasicsProps> = ({ control, errors, colors,
     />
     {errors.name && <Text className="text-[10px] text-rose-500 mb-4">{errors.name.message}</Text>}
 
-    <Text className="text-xs font-medium text-muted-foreground mb-2">Serial Number</Text>
+    <Text className="text-xs font-medium text-muted-foreground mb-2">Serial Number *</Text>
     <Controller
       control={control}
       name="serial"

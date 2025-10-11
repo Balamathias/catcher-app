@@ -121,6 +121,12 @@ const AnimatedSplash = () => {
       <Animated.Text style={[styles.brand, { opacity }]}>
         Catcher
       </Animated.Text>
+      <Animated.Text style={[styles.tagline, { opacity }]}>
+        Protects What Matters Most
+      </Animated.Text>
+      <Animated.Text style={[styles.subtagline, { opacity }]}>
+        Choose To Be Safe
+      </Animated.Text>
     </View>
   )
 }
@@ -222,6 +228,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.1,
     color: '#027d96',
+  },
+  tagline: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    color: '#666666',
+  },
+  subtagline: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 0.3,
+    color: '#888888',
   },
   pulseRing: {
     position: 'absolute',

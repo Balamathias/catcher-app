@@ -38,7 +38,7 @@ export const StepOwner: React.FC<StepOwnerProps> = ({ control, errors, colors })
           <TextInput
             value={value}
             onChangeText={onChange}
-            placeholder="Email or phone number"
+            placeholder="Email and phone number"
             placeholderTextColor={colors.mutedForeground}
             className="text-foreground"
             keyboardType="email-address"

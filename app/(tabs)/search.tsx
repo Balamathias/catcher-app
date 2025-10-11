@@ -335,19 +335,31 @@ const SearchScreen = () => {
                 ) : null}
 
                 <View className="rounded-2xl bg-muted/30 px-4 py-3">
-                  <Text className="text-[10px] uppercase tracking-[1.5px] text-muted-foreground">
+                  <Text className="text-[10px] uppercase tracking-[1.5px] text-muted-foreground mb-3">
                     Ownership
                   </Text>
-                  <View className="mt-2 flex-row flex-wrap gap-x-4 gap-y-2">
+                  <View className="gap-y-3">
                     {item.owner ? (
-                      <Text className="text-[11px] text-foreground">Owner: {item.owner}</Text>
-                    ) : null}
+                      <View>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Owner</Text>
+                        <Text className="text-[13px] font-medium text-foreground mt-1">{item.owner}</Text>
+                      </View>
+                    ) : (
+                      <View>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Owner</Text>
+                        <Text className="text-[11px] text-muted-foreground italic mt-1">Not provided</Text>
+                      </View>
+                    )}
                     {item.contact_info ? (
-                      <Text className="text-[11px] text-foreground">Contact: {item.contact_info}</Text>
+                      <View>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Contact</Text>
+                        <Text className="text-[13px] font-medium text-foreground mt-1">{item.contact_info}</Text>
+                      </View>
                     ) : null}
-                    <Text className="text-[11px] text-foreground">
-                      Last updated {formatDateTime(item.updated_at)}
-                    </Text>
+                    <View>
+                      <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Last Updated</Text>
+                      <Text className="text-[11px] text-foreground mt-1">{formatDateTime(item.updated_at)}</Text>
+                    </View>
                   </View>
                 </View>
               </Animated.View>

@@ -175,6 +175,12 @@ const WelcomeScreen: React.FC = () => {
         </Pressable>
       </View>
 
+      <View className="pt-6 pb-4 px-6">
+        <Text className="text-2xl font-bold text-primary text-center">Catcher</Text>
+        <Text className="text-sm text-muted-foreground text-center mt-1">Protects What Matters Most</Text>
+        <Text className="text-xs text-muted-foreground text-center mt-0.5">Choose To Be Safe</Text>
+      </View>
+
       <Animated.ScrollView
         ref={scrollRef}
         horizontal
