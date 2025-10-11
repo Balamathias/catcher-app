@@ -41,7 +41,7 @@ const STATUS_FILTERS: Array<{ label: string; value: FilterStatus; description: s
   { label: 'Unknown', value: 'unknown', description: 'Awaiting review' },
 ];
 
-const PRESET_QUERIES = ['MBP14', 'IPH15P', 'VIN', 'DOC'];
+const PRESET_QUERIES = ['MAC', 'iPhone', 'Honda', 'DOC'];
 
 const SearchScreen = () => {
   const { theme, colors } = useThemedColors();
@@ -142,7 +142,7 @@ const SearchScreen = () => {
     const key: Enums<'item_status'> = status ?? 'unknown';
     return (
       <View className={`rounded-full border px-3 ${subtle ? 'py-[4px]' : 'py-1'} ${classes[key]}`}>
-        <Text className={`text-[10px] font-semibold tracking-[1.5px] ${subtle ? 'leading-3' : 'leading-4'}`}>
+        <Text className={`text-[10px] font-semibold tracking-[1.5px] ${subtle ? 'leading-3' : 'leading-4'} text-foreground`}>
           {labels[key]}
         </Text>
       </View>

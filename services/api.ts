@@ -235,3 +235,17 @@ export const getCredits = async (): Promise<Response<{ available: number }>> => 
         }
     }
 }
+
+export const deleteAccount = async (payload?: { reason?: string }): Promise<Response<{ deleted: boolean; user_id: string }>> => {
+    try {
+        const { data } = await microservice.delete('/account/delete/', { data: payload })
+        return data
+    } catch (error: any) {
+        return {
+            data: null,
+            error: { message: error?.response?.data?.message || error?.message },
+            status: error?.response?.status,
+            message: error?.response?.data?.message || error?.message,
+        }
+    }
+}

@@ -35,7 +35,7 @@ const ItemCard: React.FC<{ item: Item; onPress?: () => void }> = ({ item, onPres
         </Text>
       </View>
       <View className={`self-start px-2 py-1 rounded-full ${tone.bg}`}>
-        <Text className={`text-[10px] font-medium capitalize ${tone.text}`}>{item.status}</Text>
+        <Text className={`text-[10px] font-medium capitalize ${tone.text} text-foreground`}>{item.status}</Text>
       </View>
     </Pressable>
   );

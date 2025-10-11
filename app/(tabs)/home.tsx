@@ -248,7 +248,7 @@ const RecentItem = ({ item }: { item: { id: string; name: string; status: 'safe'
         <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>SN {item.serial_number}{item.category ? ` • ${item.category}` : ''}</Text>
       </View>
       <View className={`px-2 py-1 rounded-full ${statusTone}`}>
-        <Text className="text-[10px] font-medium capitalize">{item.status}</Text>
+        <Text className="text-[10px] font-medium capitalize text-foreground">{item.status}</Text>
       </View>
     </Pressable>
   )

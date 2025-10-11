@@ -163,3 +163,14 @@ export const useGetCredits = () => {
         staleTime: 30_000, // 30s is fine; credits rarely change frequently
     })
 }
+export const useDeleteAccount = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: [QUERY_KEYS.deleteItem, 'account'],
+        mutationFn: (payload?: { reason?: string }) => import('./api').then(m => m.deleteAccount(payload)),
+        onSuccess: () => {
+            // Clear all caches on account deletion
+            queryClient.clear();
+        }
+    });
+}
