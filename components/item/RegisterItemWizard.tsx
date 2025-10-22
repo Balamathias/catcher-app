@@ -38,7 +38,7 @@ const defaultValues: FormValues = {
 
 const RegisterItemWizard: React.FC = () => {
   const { colors } = useThemedColors();
-  const [step, setStep] = useState<WizardStep>(3);
+  const [step, setStep] = useState<WizardStep>(0);
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
