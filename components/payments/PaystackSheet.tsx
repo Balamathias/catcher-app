@@ -9,7 +9,7 @@ export type PaystackSheetProps = {
   authorizationUrl?: string;
   onClose: () => void;
   onCompleted?: (url: string) => void;
-  meta?: { email?: string; amount?: number };
+  meta?: { email?: string; amount?: number, phone?: string };
   success?: boolean;
 };
 

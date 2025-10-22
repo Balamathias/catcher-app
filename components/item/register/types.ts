@@ -18,7 +18,8 @@ export interface FormValues {
 	status: (typeof STATUSES)[number];
 	description: string;
 	owner: string;
-	contact: string;
+	email: string;
+	phone: string;
 	images: Img[];
 }
 

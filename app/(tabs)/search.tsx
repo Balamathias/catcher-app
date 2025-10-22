@@ -350,16 +350,26 @@ const SearchScreen = () => {
                         <Text className="text-[11px] text-muted-foreground italic mt-1">Not provided</Text>
                       </View>
                     )}
-                    {item.contact_info ? (
+                    {item.email ? (
                       <View>
-                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Contact</Text>
-                        <Text className="text-[13px] font-medium text-foreground mt-1">{item.contact_info}</Text>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Email</Text>
+                        <Text className="text-[13px] font-medium text-foreground mt-1">{item.email}</Text>
                       </View>
                     ) : null}
-                    <View>
-                      <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Last Updated</Text>
-                      <Text className="text-[11px] text-foreground mt-1">{formatDateTime(item.updated_at)}</Text>
-                    </View>
+
+                    {item.phone ? (
+                      <View>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Phone</Text>
+                        <Text className="text-[13px] font-medium text-foreground mt-1">{item.phone}</Text>
+                      </View>
+                    ) : null}
+
+                    {item.updated_at ? (
+                      <View>
+                        <Text className="text-[10px] uppercase tracking-[1px] text-muted-foreground">Last Updated</Text>
+                        <Text className="text-[11px] text-foreground mt-1">{formatDateTime(item.updated_at)}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               </Animated.View>

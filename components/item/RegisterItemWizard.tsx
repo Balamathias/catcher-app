@@ -31,13 +31,14 @@ const defaultValues: FormValues = {
   status: STATUSES[0],
   description: '',
   owner: '',
-  contact: '',
+  email: '',
+  phone: '',
   images: []
 };
 
 const RegisterItemWizard: React.FC = () => {
   const { colors } = useThemedColors();
-  const [step, setStep] = useState<WizardStep>(0);
+  const [step, setStep] = useState<WizardStep>(3);
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +53,7 @@ const RegisterItemWizard: React.FC = () => {
   const { mutate: createItem, isPending: isCreating } = useCreateItem();
   const { mutate: startPayment, isPending: isInitPay } = useInitiatePayment();
   const { mutate: checkPayment, isPending: isVerifyPay } = useVerifyPayment();
-  const { data: credits } = useGetCredits();
+  const { data: credits, refetch: refetchCredits } = useGetCredits();
 
   const {
     control,
@@ -236,10 +237,14 @@ const RegisterItemWizard: React.FC = () => {
       setSubmitting(true);
       try {
         // Ensure payment before registering
-        if (!skipPaymentCheck) {
-          const email = values.contact?.includes('@') ? values.contact : undefined;
+        // Always check latest server credits to avoid stale local state
+        const latest = await refetchCredits();
+        const serverCredits = latest?.data?.data?.available ?? (credits?.data?.available ?? 0);
+        const hasServerCredit = serverCredits > 0;
+        if (!skipPaymentCheck && !hasServerCredit) {
+          const email = values.email?.includes('@') ? values.email : undefined;
           if (!email) {
-            Alert.alert('Email required', 'Provide a contact email in Owner step to continue to payment.');
+            Alert.alert('Email required', 'Provide an email address in Owner step to continue to payment.');
             setSubmitting(false);
             return;
           }
@@ -258,7 +263,8 @@ const RegisterItemWizard: React.FC = () => {
           status: values.status,
           description: values.description.trim() || null,
           owner: values.owner.trim() || null,
-          contact_info: values.contact.trim() || null,
+          email: values.email.trim() || null,
+          phone: values.phone.trim() || null,
           images: processedImages.map(img => ({ kind: 'url', url: img.uri })).map(img => img.url),
           fee: REG_FEE,
         };
@@ -298,9 +304,9 @@ const RegisterItemWizard: React.FC = () => {
     [reset, setValue, submitting, createItem, launchPayment]
   );
 
-  // Determine if we already have a verified payment (from this or previous session)
+  // Source of truth: server credits only
   const availableCredits = credits?.data?.available ?? 0;
-  const hasVerifiedPayment = paymentVerified || !!paidRefFromStorage || availableCredits > 0;
+  const hasVerifiedPayment = availableCredits > 0;
 
   // Recover pending payment on mount and whenever app resumes to foreground
   useEffect(() => {
@@ -342,7 +348,7 @@ const RegisterItemWizard: React.FC = () => {
     };
   }, [checkPayment]);
 
-  const reviewSubmitHandler = handleSubmit((vals) => submitRegistration(vals, hasVerifiedPayment));
+  const reviewSubmitHandler = handleSubmit((vals) => submitRegistration(vals));
 
   let currentStepContent: React.ReactNode = null;
   switch (step) {
@@ -441,7 +447,7 @@ const RegisterItemWizard: React.FC = () => {
       <PaystackSheet
         visible={paymentVisible}
         authorizationUrl={paymentUrl}
-        meta={{ email: formValues.contact, amount: REG_FEE * 100 }}
+        meta={{ email: formValues.email, phone: formValues.phone, amount: REG_FEE * 100 }}
         success={paymentVerified}
         onClose={() => setPaymentVisible(false)}
         onCompleted={(url) => {

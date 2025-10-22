@@ -20,12 +20,14 @@ export type Database = {
           contact_info: string | null
           created_at: string
           description: string | null
+          email: string | null
           fee: number | null
           id: string
           image_url: string | null
           images: string[] | null
           name: string
           owner: string | null
+          phone: string | null
           serial_number: string
           status: Database["public"]["Enums"]["item_status"]
           updated_at: string
@@ -36,12 +38,14 @@ export type Database = {
           contact_info?: string | null
           created_at?: string
           description?: string | null
+          email?: string | null
           fee?: number | null
           id?: string
           image_url?: string | null
           images?: string[] | null
           name: string
           owner?: string | null
+          phone?: string | null
           serial_number: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
@@ -52,15 +56,68 @@ export type Database = {
           contact_info?: string | null
           created_at?: string
           description?: string | null
+          email?: string | null
           fee?: number | null
           id?: string
           image_url?: string | null
           images?: string[] | null
           name?: string
           owner?: string | null
+          phone?: string | null
           serial_number?: string
           status?: Database["public"]["Enums"]["item_status"]
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_credits: {
+        Row: {
+          available: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          channel: string | null
+          created_at: string
+          paid_at: string | null
+          reference: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          channel?: string | null
+          created_at?: string
+          paid_at?: string | null
+          reference: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          channel?: string | null
+          created_at?: string
+          paid_at?: string | null
+          reference?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -97,7 +154,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_registration_credit: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      credit_registration: {
+        Args: { p_amount?: number; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       item_status: "safe" | "stolen" | "unknown"
