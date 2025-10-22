@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useForm, useWatch } from 'react-hook-form';
 import { useThemedColors } from '@/hooks/useThemedColors';
 
-import { CATEGORIES, REG_FEE, STATUSES } from './register/constants';
+import { CATEGORIES, STATUSES } from './register/constants';
 import { ProgressDots } from './register/ProgressDots';
 import { StepBasics } from './register/steps/StepBasics';
 import { StepClassification } from './register/steps/StepClassification';
@@ -15,6 +15,7 @@ import { StepNavigation } from './register/StepNavigation';
 import { uploadLocalImages } from './register/storage';
 import type { FormValues, Img, WizardStep } from './register/types';
 import { QUERY_KEYS, useCreateItem, useInitiatePayment, useVerifyPayment, useGetCredits } from '@/services/api-hooks';
+import { useGetPaymentConfig } from '@/services/api-hooks';
 import { Tables } from '@/types/supabase';
 import { PaystackSheet } from '@/components/payments/PaystackSheet';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +55,9 @@ const RegisterItemWizard: React.FC = () => {
   const { mutate: startPayment, isPending: isInitPay } = useInitiatePayment();
   const { mutate: checkPayment, isPending: isVerifyPay } = useVerifyPayment();
   const { data: credits, refetch: refetchCredits } = useGetCredits();
+  const { data: payConfig } = useGetPaymentConfig();
+  const FEE_NGN = payConfig?.data?.fee_ngn ?? 5000; // fallback to 100 if config not yet loaded
+  const FEE_KOBO = payConfig?.data?.fee_kobo ?? FEE_NGN * 5000;
 
   const {
     control,
@@ -266,7 +270,7 @@ const RegisterItemWizard: React.FC = () => {
           email: values.email.trim() || null,
           phone: values.phone.trim() || null,
           images: processedImages.map(img => ({ kind: 'url', url: img.uri })).map(img => img.url),
-          fee: REG_FEE,
+          fee: FEE_NGN,
         };
 
         createItem(payload, {
@@ -399,7 +403,7 @@ const RegisterItemWizard: React.FC = () => {
               <Ionicons name="card" size={12} color={colors.primary} />
             </View>
             <View className="flex-1">
-              <Text className="text-xs font-semibold text-primary mb-1">Registration Fee: ₦{REG_FEE.toLocaleString()}</Text>
+              <Text className="text-xs font-semibold text-primary mb-1">Registration Fee: ₦{FEE_NGN.toLocaleString()}</Text>
               <Text className="text-[11px] leading-4 text-muted-foreground">You’ll complete a quick, secure Paystack payment before your item is registered.</Text>
             </View>
           </View>
@@ -447,7 +451,7 @@ const RegisterItemWizard: React.FC = () => {
       <PaystackSheet
         visible={paymentVisible}
         authorizationUrl={paymentUrl}
-        meta={{ email: formValues.email, phone: formValues.phone, amount: REG_FEE * 100 }}
+  meta={{ email: formValues.email, phone: formValues.phone, amount: FEE_KOBO }}
         success={paymentVerified}
         onClose={() => setPaymentVisible(false)}
         onCompleted={(url) => {

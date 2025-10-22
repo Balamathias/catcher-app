@@ -14,6 +14,7 @@ import {
     updateItem,
     deleteItem,
     getCredits,
+    getPaymentConfig,
 } from "./api";
 
 export const QUERY_KEYS = {
@@ -30,6 +31,7 @@ export const QUERY_KEYS = {
     updateItem: 'updateItem',
     deleteItem: 'deleteItem',
     getCredits: 'getCredits',
+    getPaymentConfig: 'getPaymentConfig',
 } as const
 
 export const useGetCurrentUser = () => {
@@ -163,6 +165,15 @@ export const useGetCredits = () => {
         staleTime: 30_000, // 30s is fine; credits rarely change frequently
     })
 }
+
+export const useGetPaymentConfig = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.getPaymentConfig],
+        queryFn: getPaymentConfig,
+        staleTime: 5 * 60 * 1000, // cache for 5 minutes
+    })
+}
+
 export const useDeleteAccount = () => {
     const queryClient = useQueryClient();
     return useMutation({

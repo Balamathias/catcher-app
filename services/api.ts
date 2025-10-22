@@ -236,6 +236,20 @@ export const getCredits = async (): Promise<Response<{ available: number }>> => 
     }
 }
 
+export const getPaymentConfig = async (): Promise<Response<{ fee_ngn: number; fee_kobo: number; currency: string }>> => {
+    try {
+        const { data } = await microservice.get('/payments/config/')
+        return data
+    } catch (error: any) {
+        return {
+            data: { fee_ngn: 100, fee_kobo: 100 * 100, currency: 'NGN' },
+            error: { message: error?.response?.data?.message || error?.message },
+            status: error?.response?.status,
+            message: error?.response?.data?.message || error?.message,
+        }
+    }
+}
+
 export const deleteAccount = async (payload?: { reason?: string }): Promise<Response<{ deleted: boolean; user_id: string }>> => {
     try {
         const { data } = await microservice.delete('/account/delete/', { data: payload })

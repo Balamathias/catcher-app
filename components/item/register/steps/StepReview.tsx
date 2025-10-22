@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import type { FormValues, ThemedColors } from '../types';
-import { REG_FEE } from '../constants';
+import { useGetPaymentConfig } from '@/services/api-hooks';
 
 interface StepReviewProps {
   values: FormValues;
@@ -10,7 +10,10 @@ interface StepReviewProps {
   colors: ThemedColors;
 }
 
-export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submitting, colors }) => (
+export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submitting, colors }) => {
+  const { data: payConfig } = useGetPaymentConfig();
+  const feeNgN = payConfig?.data?.fee_ngn ?? 100;
+  return (
   <View>
     <Text className="text-base font-semibold text-foreground mb-4">Review Details</Text>
     <View className="rounded-xl border border-border/60 bg-card p-4 mb-5">
@@ -20,7 +23,8 @@ export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submit
         ['Category', values.category],
         ['Status', values.status],
         ['Owner', values.owner || '—'],
-        ['Contact', values.contact || '—'],
+        ['Email', values.email || '—'],
+        ['Phone', values.phone || '—'],
         ['Images', values.images.length.toString()]
       ] as [string, string][]) .map(([label, val]) => (
         <View key={label} className="flex-row justify-between mb-2">
@@ -34,7 +38,7 @@ export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submit
       <Text className="text-xs text-primary font-medium mb-1">Payment Summary</Text>
       <View className="flex-row justify-between items-center">
         <Text className="text-sm text-muted-foreground">Registration Fee</Text>
-        <Text className="text-base font-semibold text-foreground">₦{REG_FEE.toLocaleString()}</Text>
+        <Text className="text-base font-semibold text-foreground">₦{feeNgN.toLocaleString()}</Text>
       </View>
     </View>
 
@@ -45,7 +49,7 @@ export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submit
     >
       {submitting && <ActivityIndicator size="small" color={colors.primaryForeground} style={{ marginRight: 8 }} />}
       <Text className={`font-semibold text-base ${(values.name.trim() && values.serial.trim() && !submitting) ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
-        Proceed to Payment (₦{REG_FEE.toLocaleString()})
+        Proceed to Payment (₦{feeNgN.toLocaleString()})
       </Text>
     </Pressable>
 
@@ -55,4 +59,4 @@ export const StepReview: React.FC<StepReviewProps> = ({ values, onSubmit, submit
       </Text>
     </View>
   </View>
-);
+)};
